@@ -1,0 +1,823 @@
+{
+  "name": "trader-class-portal",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "lucide-react": "^0.469.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.16",
+    "vite": "^6.0.5"
+  }
+}import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  base: '/trader-portal/',
+});/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,jsx,ts,tsx}'],
+  theme: {
+    extend: {},
+  },
+  plugins: [],
+};export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="受講生専用の為替トレード学習サイト" />
+    <title>TRADER CLASS PORTAL</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './index.css';
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: #e2e8f0;
+  background: #050b14;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background: #050b14;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+a {
+  text-decoration: none;
+}import React, { useState, useEffect } from 'react';
+import {
+  Lock, ChevronRight, PlayCircle, FileText, TrendingUp,
+  Target, BrainCircuit, ShieldAlert, Award, ArrowRight,
+  BookOpen, BarChart2, Smartphone, MonitorPlay
+} from 'lucide-react';
+
+// --- アニメーション用スタイル ---
+const globalStyles = `
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 15px rgba(212, 175, 55, 0.2); }
+    50% { box-shadow: 0 0 25px rgba(212, 175, 55, 0.5); }
+  }
+  .animate-fade-in {
+    animation: fadeIn 0.8s ease-out forwards;
+    opacity: 0;
+  }
+  .delay-100 { animation-delay: 0.1s; }
+  .delay-200 { animation-delay: 0.2s; }
+  .delay-300 { animation-delay: 0.3s; }
+  .delay-400 { animation-delay: 0.4s; }
+
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(212, 175, 55, 0.2);
+  }
+
+  .gold-gradient-text {
+    background: linear-gradient(to right, #d4af37, #f3e5ab, #d4af37);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .btn-gold {
+    background: linear-gradient(135deg, #b8860b, #d4af37);
+    color: #0f172a;
+    transition: all 0.3s ease;
+  }
+  .btn-gold:hover {
+    background: linear-gradient(135deg, #d4af37, #f3e5ab);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+  }
+`;
+
+// --- データ定義 ---
+const courseData = [
+  {
+    id: 1,
+    title: "基本編",
+    description: "まずはトレードの基礎知識とツール操作を習得します。",
+    label: "基礎",
+    labelColor: "bg-blue-900/50 text-blue-300 border-blue-700",
+    icon: <BookOpen className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "基本設定（チャート）", url: "https://vimeo.com/1128467739?fl=tl&fe=ec" },
+      { title: "MT4アプリ 通貨ペアの増やし方", url: "https://vimeo.com/1128735466?fl=ip&fe=ec" },
+      { title: "MT4アプリ 基本の使い方", url: "https://vimeo.com/1128742425?fl=ip&fe=ec" },
+      { title: "ローソク足について", url: "https://vimeo.com/1128517150?fl=ip&fe=ec" },
+      { title: "移動平均線について", url: "https://vimeo.com/1128471395?fl=tl&fe=ec" },
+      { title: "RSIについて", url: "https://vimeo.com/1128472905?fl=tl&fe=ec" },
+      { title: "ダイバージェンス", url: "https://vimeo.com/1128502414?fl=tl&fe=ec" },
+      { title: "乖離について", url: "https://vimeo.com/1128502946?fl=tl&fe=ec" }
+    ]
+  },
+  {
+    id: 2,
+    title: "POG基礎とチャート分析",
+    description: "POG手法の全体像と、チャート分析の実践的な流れを理解します。",
+    label: "重要",
+    labelColor: "bg-red-900/50 text-red-300 border-red-700",
+    icon: <BarChart2 className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "POG1", url: "https://vimeo.com/1128503326?fl=tl&fe=ec" },
+      { title: "POG2", url: "https://vimeo.com/1128503727?fl=tl&fe=ec" },
+      { title: "チャート分析の流れ", url: "https://vimeo.com/1128504299?fl=tl&fe=ec" },
+      { title: "POG1リアルチャート解説", url: "https://vimeo.com/1128504717?fl=tl&fe=ec" },
+      { title: "POG2リアルチャート解説", url: "https://vimeo.com/1128505012?fl=tl&fe=ec" },
+      { title: "POGリアルエントリー解説", url: "https://vimeo.com/1180543472" },
+      { title: "エントリー報告方法", url: "https://vimeo.com/1128505415?fl=tl&fe=ec" }
+    ],
+    documents: [
+      {
+        title: "POG1編 資料",
+        desc: "初心者でも理解しやすいように図解付きで構成。まずは土台を固め、安定した利益を目指す第一歩。",
+        url: "https://gamma.app/docs/POG1-760izsbyyxncim4"
+      },
+      {
+        title: "POG1編 画像資料",
+        desc: "POG1手法の具体的なチャート画像をまとめたPDF資料。視覚的な理解を深めるためにご活用ください。",
+        url: "https://www.dropbox.com/scl/fi/258txazg4vvhjwt8kzmdf/POG1-_.pdf?rlkey=am7oveyeq4xqhes12hcj2lvwp&st=xtxnao8a&dl=0"
+      },
+      {
+        title: "POG2編 資料",
+        desc: "実際に利益を伸ばす応用テクニックを公開。エントリータイミングやメンタル管理法まで網羅。",
+        url: "https://gamma.app/docs/POG2--3l5rmpr3xfr6hqw"
+      },
+      {
+        title: "POG2編 画像資料",
+        desc: "POG2手法の実践的なチャート画像をまとめたPDF資料。より具体的なエントリーのイメージを掴むためにご活用ください。",
+        url: "https://www.dropbox.com/scl/fi/zu8bc5tavxv04xz1wghd8/POG2.pdf?rlkey=4invdmojgftw0b7afgu1ylnpc&st=4uwpuizb&dl=0"
+      }
+    ]
+  },
+  {
+    id: 3,
+    title: "実践準備と基礎理論",
+    description: "相場の基本概念や分析理論を押さえ、実践に備えます。",
+    label: "基礎",
+    labelColor: "bg-blue-900/50 text-blue-300 border-blue-700",
+    icon: <Target className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "ボラティリティ", url: "https://vimeo.com/1128506093?fl=tl&fe=ec" },
+      { title: "ローソク足のパターン", url: "https://vimeo.com/1128506444?fl=tl&fe=ec" },
+      { title: "意識ライン", url: "https://vimeo.com/1128506679?fl=tl&fe=ec" },
+      { title: "環境目線", url: "https://vimeo.com/1128506945?fl=tl&fe=ec" },
+      { title: "グランビル応用編", url: "https://vimeo.com/1128507523?fl=tl&fe=ec" },
+      { title: "勝率を上げるポイント", url: "https://vimeo.com/1128507976?fl=tl&fe=ec" }
+    ]
+  },
+  {
+    id: 4,
+    title: "応用実践編",
+    description: "実際のトレードに近い形で学び、利益を生み出す判断力を磨きます。",
+    label: "実践",
+    labelColor: "bg-emerald-900/50 text-emerald-300 border-emerald-700",
+    icon: <MonitorPlay className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "エントリーパターン解説", url: "https://vimeo.com/1128530108?fl=ip&fe=ec" },
+      { title: "エントリー実践編", url: "https://vimeo.com/1128530622?fl=ip&fe=ec" }
+    ]
+  },
+  {
+    id: 5,
+    title: "メンタル・マインド",
+    description: "トレードで生き残るための強靭な精神と心理を理解します。",
+    label: "重要",
+    labelColor: "bg-red-900/50 text-red-300 border-red-700",
+    icon: <BrainCircuit className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "プロスペクト理論", url: "https://vimeo.com/1128508940?fl=tl&fe=ec" }
+    ]
+  },
+  {
+    id: 6,
+    title: "エントリータイミング",
+    description: "勝率を極限まで高めるための、緻密なエントリー技術。",
+    label: "実践",
+    labelColor: "bg-emerald-900/50 text-emerald-300 border-emerald-700",
+    icon: <TrendingUp className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "EMAについて", url: "https://vimeo.com/1128509204?fl=tl&fe=ec" },
+      { title: "ロールリバーサル", url: "https://vimeo.com/1128509487?fl=tl&fe=ec" },
+      { title: "波形パターン", url: "https://vimeo.com/1128510323?fl=tl&fe=ec" }
+    ]
+  },
+  {
+    id: 7,
+    title: "為替相場での立ち回り",
+    description: "相場の本質を理解し、どんな環境でも対応できる柔軟性を養います。",
+    label: "応用",
+    labelColor: "bg-purple-900/50 text-purple-300 border-purple-700",
+    icon: <ShieldAlert className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "ダウ理論", url: "https://vimeo.com/1128510617?fl=tl&fe=ec" },
+      { title: "意識ラインとは", url: "https://vimeo.com/1128510974?fl=tl&fe=ec" }
+    ]
+  },
+  {
+    id: 8,
+    title: "環境認識",
+    description: "環境を読み解く力は、トレード精度を飛躍的に高めます。",
+    label: "応用",
+    labelColor: "bg-purple-900/50 text-purple-300 border-purple-700",
+    icon: <Target className="w-6 h-6 text-[#d4af37]" />,
+    items: [
+      { title: "環境認識とは", url: "https://vimeo.com/1128511441?fl=tl&fe=ec" },
+      { title: "エリオット波動", url: "https://vimeo.com/1128511836?fl=tl&fe=ec" },
+      { title: "トレンドラインとチャネルライン", url: "https://vimeo.com/1128512019?fl=tl&fe=ec" },
+      { title: "MTF環境認識", url: "https://vimeo.com/1128512224?fl=tl&fe=ec" }
+    ]
+  }
+];
+
+export default function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const styleSheet = document.createElement("style");
+    styleSheet.type = "text/css";
+    styleSheet.innerText = globalStyles;
+    document.head.appendChild(styleSheet);
+    return () => {
+      document.head.removeChild(styleSheet);
+    };
+  }, []);
+
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (password === '3123') {
+      setError('');
+      setIsAuthenticated(true);
+      window.scrollTo(0, 0);
+    } else {
+      setError('入力されたパスワードが正しくありません。もう一度ご確認ください。');
+      setPassword('');
+    }
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[#050b14] flex flex-col items-center justify-center p-4 font-serif text-slate-200 relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-[50%] h-[50%] bg-blue-900/20 rounded-full blur-[120px]"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-[50%] h-[50%] bg-yellow-900/20 rounded-full blur-[120px]"></div>
+        </div>
+
+        <div className="z-10 max-w-lg w-full">
+          <div className="text-center mb-10 animate-fade-in">
+            <span className="inline-block py-1 px-3 rounded-full border border-[#d4af37]/50 text-[#d4af37] text-xs font-sans tracking-widest mb-4">
+              MEMBERS ONLY
+            </span>
+            <h1 className="text-2xl md:text-3xl font-bold mb-4 tracking-wider leading-relaxed">
+              受講生専用の為替トレード学習サイト
+              <br />
+              <span className="text-sm md:text-base font-normal text-slate-400 mt-2 block">
+                （限定サイト）トレーダークラス
+              </span>
+            </h1>
+            <p className="text-[#d4af37] text-lg md:text-xl mt-6 italic opacity-90">
+              「直感から確信へ。為替相場の本質を学び、一生涯のスキルを築く。」
+            </p>
+          </div>
+
+          <div className="glass-panel rounded-2xl p-8 shadow-2xl animate-fade-in delay-200">
+            <div className="flex justify-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-slate-800 flex items-center justify-center border border-slate-700">
+                <Lock className="w-8 h-8 text-[#d4af37]" />
+              </div>
+            </div>
+
+            <p className="text-center text-slate-300 mb-8 font-sans text-sm leading-relaxed">
+              このページは、受講生限定で公開されているトレーダークラス専用ポータルです。
+              <br />
+              お渡ししている4桁のパスワードを入力して入場してください。
+            </p>
+
+            <form onSubmit={handleLogin} className="space-y-6 font-sans">
+              <div>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="4桁のパスワードを入力"
+                  maxLength={4}
+                  className="w-full bg-slate-900/80 border border-slate-700 text-center text-2xl tracking-[0.5em] text-white rounded-lg py-4 focus:outline-none focus:border-[#d4af37] focus:ring-1 focus:ring-[#d4af37] transition-all placeholder:text-sm placeholder:tracking-normal placeholder:text-slate-600"
+                />
+              </div>
+
+              {error && (
+                <div className="text-red-400 text-sm text-center bg-red-900/20 py-2 rounded-md border border-red-900/50">
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="submit"
+                className="w-full btn-gold font-bold text-sm tracking-widest py-4 rounded-lg flex items-center justify-center gap-2 uppercase"
+              >
+                認証して学習を開始する
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </form>
+          </div>
+
+          <p className="text-center text-xs text-slate-500 mt-8 font-sans animate-fade-in delay-400">
+            ※当サイトのコンテンツは外部共有を固く禁じます。
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-[#050b14] text-slate-300 font-sans selection:bg-[#d4af37]/30">
+      <header className="sticky top-0 z-50 bg-[#050b14]/90 backdrop-blur-md border-b border-slate-800 py-4 px-6">
+        <div className="max-w-6xl mx-auto flex justify-between items-center">
+          <h1 className="text-[#d4af37] font-serif font-bold text-sm md:text-base tracking-widest flex items-center gap-2">
+            <Award className="w-5 h-5" />
+            TRADER CLASS PORTAL
+          </h1>
+          <span className="text-xs bg-slate-800 text-slate-400 px-3 py-1 rounded-full border border-slate-700">
+            受講生限定
+          </span>
+        </div>
+      </header>
+
+      <main className="pb-24">
+        <section className="relative pt-20 pb-16 px-4 border-b border-slate-800 overflow-hidden">
+          <div className="absolute top-0 right-0 w-[60%] h-[100%] bg-blue-900/10 rounded-full blur-[150px] pointer-events-none"></div>
+
+          <div className="max-w-4xl mx-auto text-center relative z-10 animate-fade-in">
+            <h2 className="text-3xl md:text-4xl lg:text-5xl font-serif font-bold text-white mb-6 leading-tight">
+              受講生専用の為替トレード学習サイト
+              <br />
+              <span className="text-2xl md:text-3xl mt-4 block text-slate-400">
+                トレーダークラス
+              </span>
+            </h2>
+            <p className="text-lg md:text-xl text-[#d4af37] mb-10 font-serif italic">
+              「直感から確信へ。為替相場の本質を学び、一生涯のスキルを築く。」
+            </p>
+          </div>
+        </section>
+
+        <section className="py-16 px-4 max-w-4xl mx-auto animate-fade-in delay-100">
+          <div className="glass-panel p-8 md:p-12 rounded-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-[#d4af37] to-transparent"></div>
+
+            <h3 className="text-2xl font-serif text-white mb-6 flex items-center gap-3">
+              <BookOpen className="text-[#d4af37] w-6 h-6" />
+              学習マニュアルのご案内
+            </h3>
+
+            <div className="space-y-6 text-slate-300 leading-relaxed text-sm md:text-base">
+              <p>
+                本ポータルでは、為替相場の本質とトレードに必要な知識を体系的に習得し、利益を最大化する
+                <strong className="text-white font-bold">「利大損小」のスタイル</strong>
+                を確固たるものにしていただきます。
+              </p>
+              <p>
+                用意されたコンテンツを焦らず順を追って進めることで、深い理解と実践力が自然と身につくように設計されています。
+                <br />
+                今の積み重ねが、今後の利益に直結します。
+              </p>
+              <p>
+                <strong className="text-[#d4af37] text-lg font-serif block mt-4">
+                  月利50％の達成。
+                </strong>
+                この目標を見据え、ここから着実にステップアップしていきましょう。
+              </p>
+            </div>
+
+            <div className="mt-8 pt-6 border-t border-slate-800 flex items-center justify-between">
+              <span className="text-sm text-slate-500">学習用パスワード（備忘録）</span>
+              <code className="bg-slate-900 px-4 py-2 rounded text-[#d4af37] tracking-widest border border-slate-700">
+                3123
+              </code>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-12 px-4 max-w-5xl mx-auto animate-fade-in delay-200">
+          <div className="text-center mb-12">
+            <h3 className="text-3xl font-serif text-white mb-4 gold-gradient-text inline-block">
+              学習の進め方
+            </h3>
+            <p className="text-slate-400">
+              必ず「基本編」から順番に進めてください。段階的に学ぶことで理解が深まります。
+            </p>
+          </div>
+
+          <div className="flex flex-col md:flex-row items-center justify-center gap-4 relative">
+            <div className="hidden md:block absolute top-1/2 left-10 right-10 h-0.5 bg-slate-800 -z-10"></div>
+
+            {['基礎', '分析', '実践', '応用', '環境認識'].map((step, index) => (
+              <div key={index} className="flex flex-col items-center group relative z-10">
+                <div className="w-16 h-16 rounded-full bg-slate-900 border-2 border-slate-700 flex items-center justify-center text-[#d4af37] font-serif text-xl mb-3 shadow-lg transition-all group-hover:border-[#d4af37] group-hover:shadow-[0_0_15px_rgba(212,175,55,0.3)]">
+                  {index + 1}
+                </div>
+                <span className="text-sm font-bold text-slate-300">{step}</span>
+                {index < 4 && (
+                  <ArrowRight className="md:hidden w-5 h-5 text-slate-600 my-2" />
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="py-16 px-4 max-w-5xl mx-auto animate-fade-in delay-300">
+          <h3 className="text-3xl font-serif text-white mb-10 border-l-4 border-[#d4af37] pl-4">
+            学習コンテンツ
+          </h3>
+
+          <div className="space-y-12">
+            {courseData.map((section) => (
+              <div
+                key={section.id}
+                className="glass-panel rounded-xl overflow-hidden border border-slate-800 hover:border-slate-700 transition-colors"
+              >
+                <div className="bg-slate-900/50 p-6 md:p-8 border-b border-slate-800">
+                  <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-slate-800 rounded-lg">
+                        {section.icon}
+                      </div>
+                      <div>
+                        <span className="text-slate-500 text-sm font-serif mb-1 block">
+                          CHAPTER {section.id}
+                        </span>
+                        <h4 className="text-xl md:text-2xl font-bold text-white">
+                          {section.title}
+                        </h4>
+                      </div>
+                    </div>
+                    <span className={`px-3 py-1 text-xs font-bold rounded-full border ${section.labelColor}`}>
+                      {section.label}
+                    </span>
+                  </div>
+                  <p className="text-slate-400 text-sm leading-relaxed">
+                    {section.description}
+                  </p>
+                </div>
+
+                <div className="p-6 md:p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {section.items.map((item, idx) => (
+                      <a
+                        key={idx}
+                        href={item.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center justify-between p-4 rounded-lg bg-slate-900/40 border border-slate-800 hover:border-[#d4af37]/50 hover:bg-slate-800/60 transition-all group"
+                      >
+                        <div className="flex items-center gap-3">
+                          <PlayCircle className="w-5 h-5 text-slate-500 group-hover:text-[#d4af37] transition-colors flex-shrink-0" />
+                          <span className="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">
+                            {item.title}
+                          </span>
+                        </div>
+                        <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-[#d4af37] transition-colors" />
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {section.documents && (
+                  <div className="bg-slate-900/80 p-6 md:p-8 border-t border-slate-800">
+                    <h5 className="text-[#d4af37] font-serif text-lg mb-4 flex items-center gap-2">
+                      <FileText className="w-5 h-5" />
+                      追加資料・マニュアル
+                    </h5>
+                    <p className="text-sm text-slate-400 mb-6">
+                      動画と併せて確認することで、より深い理解へと繋がります。参考にしながら取引を進めていきましょう。
+                    </p>
+                    <div className="grid grid-cols-1 gap-4">
+                      {section.documents.map((doc, idx) => (
+                        <a
+                          key={idx}
+                          href={doc.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="block p-5 rounded-lg bg-[#0f172a] border border-slate-700 hover:border-[#d4af37] transition-all group"
+                        >
+                          <div className="flex justify-between items-start mb-2">
+                            <h6 className="text-white font-bold group-hover:text-[#d4af37] transition-colors flex items-center gap-2">
+                              {doc.title}
+                            </h6>
+                            <span className="text-xs bg-slate-800 px-2 py-1 rounded text-slate-400">
+                              PDF/スライド
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-400 leading-relaxed">
+                            {doc.desc}
+                          </p>
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="py-12 px-4 max-w-4xl mx-auto text-center">
+          <div className="p-1 rounded-2xl bg-gradient-to-r from-transparent via-[#d4af37]/30 to-transparent">
+            <div className="bg-[#050b14] p-8 md:p-12 rounded-2xl">
+              <Award className="w-12 h-12 text-[#d4af37] mx-auto mb-6" />
+              <h3 className="text-2xl font-serif text-white mb-6">基礎から応用、そして結果へ。</h3>
+              <p className="text-slate-300 leading-relaxed max-w-2xl mx-auto">
+                以上の内容を順番に学習していくことで、トレードに必要な知識と高度な技術を段階的に習得できます。
+                <br />
+                基礎から応用までを自身の血肉とし、ブレないマインドで
+                <strong className="text-[#d4af37] font-bold">月利50％の達成</strong>
+                を目指しましょう。
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-16 px-4 max-w-4xl mx-auto">
+          <div className="glass-panel border-[#d4af37]/30 rounded-2xl overflow-hidden shadow-[0_0_30px_rgba(0,0,0,0.5)] relative">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-[#d4af37]/10 rounded-full blur-[50px]"></div>
+
+            <div className="p-8 md:p-12">
+              <div className="inline-block px-3 py-1 rounded border border-[#d4af37] text-[#d4af37] text-xs font-bold tracking-widest mb-6">
+                SUPPORT TOOL
+              </div>
+              <h3 className="text-3xl font-serif text-white mb-6">
+                テレグラム配信グループのご案内
+              </h3>
+
+              <div className="mb-10 text-slate-300 leading-relaxed">
+                <p className="mb-4">
+                  <strong className="text-white text-lg border-b border-[#d4af37]/50 pb-1">
+                    Signal Bot Pbb とは
+                  </strong>
+                </p>
+                <p className="mb-6">
+                  Signal Bot Pbb は、バイナリーオプションに特化したエントリーポイントをリアルタイムでお知らせする、受講生限定のTelegram配信グループです。
+                  <br />
+                  配信での取引をスムーズに行うため、専用アプリのご準備をお願いいたします。
+                </p>
+
+                <div className="bg-slate-900/80 p-5 rounded-lg border border-slate-700 mb-6">
+                  <h4 className="text-[#d4af37] font-bold mb-2 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4" /> 利用のポイント
+                  </h4>
+                  <p className="text-sm">
+                    エントリータイミングが合わず取引できない方にも短時間で利益を狙えるよう、あらかじめ分析済みのポイントを配信します。
+                    <br />
+                    配信タイミングで取引できなかった場合も、チャートと照らし合わせて復習することで、ご自身の分析力を飛躍的に高める教材として活用できます。
+                  </p>
+                </div>
+              </div>
+
+              <div className="space-y-6 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-[#d4af37] before:to-transparent">
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#d4af37] bg-slate-900 text-[#d4af37] shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 font-bold">
+                    1
+                  </div>
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-900/50 p-5 rounded-xl border border-slate-700">
+                    <h4 className="font-bold text-white mb-3 text-sm">Telegramアプリのダウンロード</h4>
+                    <div className="flex flex-col gap-3">
+                      <a
+                        href="https://apps.apple.com/jp/app/telegram-messenger/id686449807"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs text-blue-400 hover:text-blue-300 transition-colors bg-blue-900/20 p-2 rounded border border-blue-900/50"
+                      >
+                        <Smartphone className="w-4 h-4" /> iPhoneの方はこちら
+                      </a>
+                      <a
+                        href="https://play.google.com/store/apps/details?id=org.telegram.messenger&pcampaignid=web_share"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 text-xs text-green-400 hover:text-green-300 transition-colors bg-green-900/20 p-2 rounded border border-green-900/50"
+                      >
+                        <Smartphone className="w-4 h-4" /> Androidの方はこちら
+                      </a>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#d4af37] bg-slate-900 text-[#d4af37] shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 font-bold">
+                    2
+                  </div>
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-900/50 p-5 rounded-xl border border-slate-700">
+                    <h4 className="font-bold text-white mb-2 text-sm">アカウント登録</h4>
+                    <p className="text-xs text-slate-400">
+                      アプリをダウンロード後、画面の指示に従い簡単な初期登録を済ませてください。
+                    </p>
+                  </div>
+                </div>
+
+                <div className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-[#d4af37] bg-[#d4af37] text-slate-900 shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 relative z-10 font-bold">
+                    3
+                  </div>
+                  <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] bg-slate-900/50 p-5 rounded-xl border border-[#d4af37]/50 relative overflow-hidden">
+                    <div className="absolute top-0 right-0 w-16 h-16 bg-[#d4af37]/10 rounded-full blur-[20px]"></div>
+                    <h4 className="font-bold text-white mb-3 text-sm">グループへ参加</h4>
+                    <a
+                      href="https://t.me/pb_signal"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full text-center py-2 px-4 bg-[#2AABEE] hover:bg-[#229ED9] text-white text-xs font-bold rounded transition-colors shadow-lg"
+                    >
+                      アラートグループに参加する
+                    </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-12 bg-slate-950 p-6 rounded-xl border border-slate-800">
+                <div className="flex flex-col md:flex-row gap-6 items-start">
+                  <div className="flex-1">
+                    <h5 className="text-white font-bold mb-3 flex items-center gap-2">
+                      <BookOpen className="w-4 h-4 text-[#d4af37]" /> 使い方ガイド
+                    </h5>
+                    <p className="text-xs text-slate-400 mb-4">
+                      配信グループの具体的な活用方法はこちらの資料をご確認ください。
+                    </p>
+                    <a
+                      href="https://www.canva.com/design/DAGwokCkOGU/jTzFX_K_cNZxLxs80BqHRA/view?utm_content=DAGwokCkOGU&utm_campaign=designshare&utm_medium=link2&utm_source=uniquelinks&utlId=h5d062a4a63"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center justify-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold rounded border border-slate-600 transition-colors"
+                    >
+                      <FileText className="w-3 h-3" /> Signal Bot Pbb 使い方資料
+                    </a>
+                  </div>
+
+                  <div className="flex-1 bg-red-900/10 border border-red-900/30 p-4 rounded-lg">
+                    <h5 className="text-red-400 font-bold text-xs mb-2 flex items-center gap-1">
+                      <ShieldAlert className="w-3 h-3" /> 必須のご確認
+                    </h5>
+                    <p className="text-xs text-slate-300 font-bold mb-2">
+                      Telegramグループに参加できましたら、
+                      <span className="text-[#d4af37]">必ず運営までお知らせください。</span>
+                    </p>
+                    <p className="text-[10px] text-slate-500 leading-relaxed">
+                      ※当配信グループを活用した取引は、バイナリーオプション（the option）を通じて行っていただく流れになります。
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 text-xs text-slate-500 bg-slate-900/50 p-4 rounded border border-slate-800">
+                <strong className="text-slate-400 block mb-1">【注意事項・免責事項】</strong>
+                この配信グループの著作権は当コミュニティに帰属します。配信される内容は機密情報であり、転写・転載・複製・改変・上映、インターネット上へのアップロード等は一切禁止されています。違反が発覚した場合、直ちに法的措置の対象となりますので十分にご注意ください。
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="py-20 px-4 text-center">
+          <div className="max-w-2xl mx-auto">
+            <h2 className="text-3xl md:text-4xl font-serif text-white mb-8">
+              ここからが、
+              <br className="md:hidden" />
+              本当のスタートです。
+            </h2>
+            <p className="text-lg text-slate-300 mb-10 leading-relaxed font-serif italic">
+              知識を一つずつ積み上げていけば、
+              <br className="md:hidden" />
+              やがてチャートが全く違って見える瞬間が訪れます。
+              <br />
+              焦る必要はありません。
+              <br />
+              まずは基本編から、確実な一歩を踏み出してください。
+            </p>
+            <button
+              onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+              className="btn-gold px-8 py-4 rounded-full font-bold text-sm tracking-widest inline-flex items-center gap-2"
+            >
+              学習をスタートする <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <footer className="bg-slate-950 py-8 border-t border-slate-900 text-center">
+        <p className="text-slate-600 text-xs tracking-widest font-sans">
+          &copy; {new Date().getFullYear()} TRADER CLASS PORTAL. All Rights Reserved.
+          <br />
+          <span className="inline-block mt-2 opacity-50">
+            本サイトは受講生限定の機密ポータルです。外部へのURL共有・内容の漏洩を禁じます。
+          </span>
+        </p>
+      </footer>
+    </div>
+  );
+}name: Deploy Vite site to GitHub Pages
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build
+        run: npm run build
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v5
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4your-project/
+├─ .github/
+│  └─ workflows/
+│     └─ deploy.yml
+├─ src/
+│  ├─ App.jsx
+│  ├─ index.css
+│  └─ main.jsx
+├─ index.html
+├─ package.json
+├─ postcss.config.js
+├─ tailwind.config.js
+└─ vite.config.js
